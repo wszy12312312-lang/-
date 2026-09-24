@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>卷帷 · 小说阅读器</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-shelf="sylva" data-reading-theme="light" data-pageturn="simulation">
+
+<!-- ============ 顶部栏 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">卷</span>
+    <span class="brand-name">卷帷</span>
+  </div>
+
+  <div class="statusbar" id="statusbar">
+    <span class="status-chip" id="clock" title="当前时间">--:--</span>
+    <span class="status-chip" id="wordcount" title="本次已阅读字数">已读 0 字</span>
+  </div>
+
+  <nav class="top-actions">
+    <button class="icon-btn" id="btn-import" title="扫描导入书库目录">＋ 导入书库</button>
+    <button class="icon-btn" id="btn-scan" title="自动扫描整块硬盘里的所有小说">📡 全盘找书</button>
+    <select id="shelf-theme" class="select" title="切换书架风格">
+      <option value="sylva">Sylva 绿意</option>
+      <option value="white">白色简约</option>
+      <option value="black">黑色简约</option>
+      <option value="warm">暖木书架</option>
+    </select>
+    <button class="icon-btn" id="btn-music" title="音乐播放器">♪ 音乐</button>
+    <button class="icon-btn" id="btn-settings" title="阅读设置">⚙ 设置</button>
+  </nav>
+</header>
+
+<!-- ============ 书架视图 ============ -->
+<main id="shelf-view" class="view active">
+  <div class="shelf-toolbar">
+    <input type="search" id="search" class="search" placeholder="搜索书名 / 作者…" />
+    <div class="filters" id="filters">
+      <button class="chip active" data-cat="all">全部</button>
+      <button class="chip" data-cat="reading">在读</button>
+      <button class="chip" data-cat="finished">已读完</button>
+      <button class="chip" data-cat="unread">未读</button>
+    </div>
+    <span class="shelf-count" id="shelf-count"></span>
+  </div>
+  <div id="shelf" class="shelf"></div>
+  <div id="empty-hint" class="empty-hint" hidden>
+    <p>书架空空如也。</p>
+    <p class="dim">点击右上角「＋ 导入书库」，选择你的小说目录（如知识库）。支持 <b>.txt / .md</b> 自动分章。</p>
+  </div>
+</main>
+
+<!-- ============ 阅读视图 ============ -->
+<section id="reader-view" class="view">
+  <div class="reader-top">
+    <button class="icon-btn ghost" id="btn-back">‹ 书架</button>
+    <div class="reader-title" id="reader-title">—</div>
+    <div class="reader-tools">
+      <select id="chapter-select" class="select small" title="章节跳转"></select>
+      <button class="icon-btn ghost" id="btn-toc" title="目录">☰</button>
+      <button class="icon-btn ghost" id="btn-theme-cycle" title="切换阅读模式">◐</button>
+    </div>
+  </div>
+
+  <!-- 翻页舞台 -->
+  <div id="stage" class="stage pageturn-simulation">
+    <div id="pages" class="pages"></div>
+    <button class="nav-arrow left" id="nav-left" title="上一页">‹</button>
+    <button class="nav-arrow right" id="nav-right" title="下一页">›</button>
+    <div class="tap-zones" id="tap-zones"></div>
+  </div>
+
+  <!-- 阅读底部进度条 -->
+  <div class="reader-bottom">
+    <span id="progress-label" class="dim">0%</span>
+    <input type="range" id="progress" class="progress" min="0" max="100" value="0" />
+    <span id="chapter-label" class="dim"></span>
+  </div>
+
+  <!-- 设置浮层（阅读内） -->
+  <div id="reader-settings" class="reader-settings" hidden>
+    <div class="rs-row">
+      <span>字号</span>
+      <input type="range" id="font-size" min="14" max="40" value="20" />
+      <span id="font-size-val">20</span>
+    </div>
+    <div class="rs-row">
+      <span>行距</span>
+      <input type="range" id="line-height" min="14" max="30" value="19" />
+      <span id="line-height-val">1.9</span>
+    </div>
+    <div class="rs-row">
+      <span>翻页</span>
+      <div class="seg" id="pageturn-seg">
+        <button data-pt="simulation" class="active">仿真</button>
+        <button data-pt="horizontal">左右</button>
+        <button data-pt="vertical">上下</button>
+      </div>
+    </div>
+    <div class="rs-row">
+      <span>主题</span>
+      <div class="seg" id="theme-seg">
+        <button data-th="light" class="active">明亮</button>
+        <button data-th="dark">暗黑</button>
+        <button data-th="green">护眼</button>
+        <button data-th="immersive">沉浸</button>
+      </div>
+    </div>
+    <div class="rs-row">
+      <span>背景图</span>
+      <div class="seg" id="bg-seg">
+        <button data-bg="forest" class="active">林雾</button>
+        <button data-bg="ocean">深海</button>
+        <button data-bg="dusk">暮色</button>
+        <button data-bg="none">无</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 目录浮层 -->
+  <div id="toc-panel" class="toc-panel" hidden></div>
+</section>
+
+<!-- ============ 音乐播放器 ============ -->
+<aside id="music-bar" class="music-bar" hidden>
+  <div class="music-cover" id="music-cover" title="专辑封面"><div class="cover-fallback">♪</div></div>
+  <div class="music-meta">
+    <div class="music-title" id="music-title">未选择音乐</div>
+    <div class="music-sub" id="music-sub">点击导入音频或上一首/下一首</div>
+  </div>
+  <div class="music-controls">
+    <button class="icon-btn" id="music-prev" title="上一首">⏮</button>
+    <button class="icon-btn play" id="music-play" title="播放/暂停">▶</button>
+    <button class="icon-btn" id="music-next" title="下一首">⏭</button>
+    <input type="range" id="music-vol" class="vol" min="0" max="100" value="70" title="音量" />
+  </div>
+  <button class="icon-btn ghost" id="music-import" title="导入音频目录">📁 导入</button>
+  <button class="icon-btn ghost" id="music-close" title="收起">×</button>
+  <audio id="audio" preload="metadata"></audio>
+</aside>
+
+<!-- ============ 设置面板 ============ -->
+<div id="settings-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>偏好设置</h3>
+    <label class="field">默认阅读模式
+      <select id="set-theme" class="select">
+        <option value="light">明亮</option>
+        <option value="dark">暗黑</option>
+        <option value="green">绿色护眼</option>
+        <option value="immersive">沉浸式背景</option>
+      </select>
+    </label>
+    <label class="field">默认翻页方式
+      <select id="set-pageturn" class="select">
+        <option value="simulation">仿真翻页</option>
+        <option value="horizontal">左右翻页</option>
+        <option value="vertical">上下翻页</option>
+      </select>
+    </label>
+    <label class="field">书库目录提示
+      <input id="set-library-hint" class="input" placeholder="如 D:\知识库" />
+    </label>
+    <label class="field" id="desktop-shortcut-row">桌面快捷方式
+      <button class="icon-btn" id="btn-desktop-shortcut">创建桌面快捷方式</button>
+    </label>
+    <label class="field">全盘扫描缓存
+      <button class="icon-btn" id="btn-scan-reset" title="清空后，下次「全盘找书」会重新判定所有文件">清空缓存并重新判定</button>
+    </label>
+    <div class="modal-actions">
+      <button class="icon-btn" id="btn-reset-ach">重置成就</button>
+      <button class="icon-btn primary" id="btn-settings-close">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 全盘扫描进度 ============ -->
+<div id="scan-modal" class="modal" hidden>
+  <div class="scan-card">
+    <div class="scan-emoji">📚</div>
+    <h3 class="scan-title">正在为你翻找小说…</h3>
+    <div class="scan-track">
+      <div class="scan-fill"></div>
+      <div class="scan-traveler">📖</div>
+    </div>
+    <div class="scan-counts">
+      <div class="scan-count"><b id="scan-dirs">0</b><span>个文件夹</span></div>
+      <div class="scan-count"><b id="scan-books">0</b><span>本小说</span></div>
+    </div>
+    <p class="scan-quip" id="scan-quip">在书海里捞针…</p>
+    <div class="scan-path" id="scan-path">准备出发…</div>
+    <div class="scan-actions">
+      <button class="icon-btn" id="btn-scan-cancel">停止扫描</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 成就弹窗 ============ -->
+<div id="ach-popup" class="ach-popup" hidden>
+  <div class="ach-card">
+    <div class="ach-badge" id="ach-badge">🏅</div>
+    <div class="ach-text">
+      <div class="ach-title" id="ach-title">成就达成</div>
+      <div class="ach-desc" id="ach-desc"></div>
+    </div>
+    <button class="icon-btn" id="ach-close">收下</button>
+  </div>
+</div>
+
+<!-- ============ 书籍悬浮详情卡 ============ -->
+<div id="book-detail" class="book-detail" hidden>
+  <div class="bd-cover" id="bd-cover"></div>
+  <div class="bd-info">
+    <div class="bd-title" id="bd-title"></div>
+    <div class="bd-author" id="bd-author"></div>
+    <div class="bd-stats" id="bd-stats"></div>
+    <div class="bd-intro" id="bd-intro"></div>
+    <button class="icon-btn primary" id="bd-open">开始阅读</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

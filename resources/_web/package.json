@@ -1,0 +1,7 @@
+{
+  "name": "juanwei-reader",
+  "version": "1.0.0",
+  "main": "electron/main.js",
+  "type": "module",
+  "private": true
+}
